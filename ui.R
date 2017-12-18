@@ -19,10 +19,11 @@ fluidPage(
       hr(),
       shinyjs::disabled(
         radioButtons("analysisType", "Analysis type:",
-                     c("All years", "Compare years", "One year"))
+                     c("All years", "Compare years", "One year","Year to date"))
       ),
       shinyjs::hidden(
-        sliderInput("yearStart", "Starting month:", min=1, max=12, value=1, step=1, sep="")
+        sliderInput("yearStart", "Starting month:", min=1, max=12, value=1,
+                    step=1, sep="")
       ),
       span(id="instructions",
         hr(),

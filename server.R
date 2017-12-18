@@ -161,10 +161,22 @@ function(input, output, session) {
     validate(need(data, "no stats"))
     if (input$analysisType == "One year") {
       info = info[input$yearStart:(11+input$yearStart), ]
+    } else if (input$analysisType == "Year to date") {
+      info = info[info$year == max(info$year), ]
     }
-    cat("Available data:", nrow(info)%/%12, "years",
-        ifelse(nrow(info)%%12==0, "", 
-               paste("and", nrow(info)%%12, "months")), "\n")
+    cat("Available data: ")
+    wholeYears = nrow(info) %/% 12
+    remMonths = nrow(info) %% 12
+    if (input$analysisType %in% c("One year", "Year to date")) {
+      cat(ifelse(remMonths==0, 12, remMonths), "months\n")
+    } else {
+      cat(wholeYears, "years ")
+      if (remMonths == 0 ) {
+        cat("\n")
+      } else {
+        cat("and", remMonths, "months\n")
+      }
+    }
     caseSum = sum(info$cases)
     cat("Total cases:", caseSum, "\n")
     compSum = sum(info$complications, na.rm=TRUE)
@@ -200,9 +212,11 @@ function(input, output, session) {
   output$plot = renderPlot({
     info = info()
     validate(need(info, "no plot"))
-    if (input$analysisType %in% c("All years", "One year")) {
+    if (input$analysisType %in% c("All years", "One year", "Year to date")) {
       if (input$analysisType == "One year") {
         info = info[input$yearStart:(11+input$yearStart), ]
+      } else if (input$analysisType == "Year to date") {
+        info = info[info$year == max(info$year), ]
       }
       if (input$analysisType == "All years") {
         monthsToLabel = c(1, 7)
@@ -266,6 +280,7 @@ function(input, output, session) {
               horiz=TRUE, las=1,
               col = rev(2:(1+length(compNames))),
               main="Counts of each complication", xlab="count")
+
     } else {  # Compare years
       par(mfrow=c(1, 2))
       years = unique(info$year)
@@ -304,7 +319,16 @@ function(input, output, session) {
     if (input$analysisType == "One year") {
       years = unique(info$year[input$yearStart:(11+input$yearStart)])
       data = data[data$year %in% years, ]
+    } else if (input$analysisType == "Year to date") {
+      info = info[info$year == max(info$year), ]
+      data = data[data$year == max(data$year), ]
     }
+      
+    moCol = match("Jan", names(data))
+    moCol = moCol:(moCol+11)
+    data = cbind(data[, c("year", "complication")],
+                 total=apply(as.matrix(data[, moCol]), 1, sum, na.rm=TRUE),
+                 data[, moCol])
     data
   }, options=list(paging=FALSE, searching=FALSE, info=FALSE))
 
